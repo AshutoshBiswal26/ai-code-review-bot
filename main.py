@@ -1,47 +1,24 @@
-import json
-import os
+from reviewer.github_client import GitHubPRClient
+from reviewer.review_engine import ReviewEngine
 
-from github import Github
 
-# Read GitHub token
-github_token = os.getenv("GITHUB_TOKEN")
+def main():
 
-# Initialize GitHub client
-g = Github(github_token)
+    github_client = GitHubPRClient()
 
-# Repository name
-repo_name = os.getenv("GITHUB_REPOSITORY")
+    pr_details = github_client.get_pr_details()
 
-# Event payload path
-event_path = os.getenv("GITHUB_EVENT_PATH")
+    print("\n==============================")
+    print(f"Reviewing PR #{pr_details['number']}")
+    print(f"PR Title: {pr_details['title']}")
+    print("==============================")
 
-# Load GitHub event data
-with open(event_path, "r") as file:
-    event_data = json.load(file)
+    changed_files = github_client.get_changed_files()
 
-# Extract PR number
-pr_number = event_data["pull_request"]["number"]
+    review_engine = ReviewEngine()
 
-# Access repository
-repo = g.get_repo(repo_name)
+    review_engine.review_files(changed_files)
 
-# Access pull request
-pr = repo.get_pull(pr_number)
 
-print("\n==============================")
-print(f"Reviewing PR #{pr_number}")
-print(f"PR Title: {pr.title}")
-print("==============================\n")
-
-# Get changed files
-files = pr.get_files()
-
-for file in files:
-    print(f"File: {file.filename}")
-    print(f"Additions: {file.additions}")
-    print(f"Deletions: {file.deletions}")
-
-    print("\nPatch:")
-    print(file.patch)
-
-    print("\n" + "=" * 60 + "\n")
+if __name__ == "__main__":
+    main()
