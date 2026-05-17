@@ -1,5 +1,4 @@
 import boto3
-import json
 import os
 
 
@@ -19,6 +18,8 @@ class BedrockClient:
             "BEDROCK_MODEL_ID"
         )
 
+        print(f"Using model: {self.model_id}")
+
     def review_code(self, patch):
 
         prompt = f"""
@@ -37,24 +38,22 @@ Code Diff:
 {patch}
 """
 
-        body = {
-            "anthropic_version": "bedrock-2023-05-31",
-            "max_tokens": 700,
-            "messages": [
+        response = self.client.converse(
+            modelId=self.model_id,
+            messages=[
                 {
                     "role": "user",
-                    "content": prompt
+                    "content": [
+                        {
+                            "text": prompt
+                        }
+                    ]
                 }
-            ]
-        }
-
-        response = self.client.invoke_model(
-            modelId=self.model_id,
-            body=json.dumps(body)
+            ],
+            inferenceConfig={
+                "maxTokens": 700,
+                "temperature": 0.2
+            }
         )
 
-        response_body = json.loads(
-            response["body"].read()
-        )
-
-        return response_body["content"][0]["text"]
+        return response["output"]["message"]["content"][0]["text"]
