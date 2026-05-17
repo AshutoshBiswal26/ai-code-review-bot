@@ -1,60 +1,30 @@
-from reviewer.prompts import REVIEW_PROMPT
+from reviewer.bedrock_client import BedrockClient
 
 
 class ReviewEngine:
 
-    def generate_mock_review(self, patch):
+    def __init__(self):
 
-        review_comments = []
-
-        patch_lower = patch.lower()
-
-        if "print(" in patch_lower:
-            review_comments.append(
-                "Consider using structured logging instead of print statements."
-            )
-
-        if "password" in patch_lower:
-            review_comments.append(
-                "Potential security concern: hardcoded password detected."
-            )
-
-        if len(patch) > 500:
-            review_comments.append(
-                "Large patch detected. Consider splitting into smaller PRs."
-            )
-
-        if not review_comments:
-            review_comments.append(
-                "Code changes look clean overall."
-            )
-
-        return review_comments
+        self.bedrock_client = BedrockClient()
 
     def review_files(self, files):
 
-        print("\n")
-        print(REVIEW_PROMPT)
-        print("\n")
+        all_reviews = []
 
         for file in files:
 
-            print("=" * 60)
+            print(f"\nReviewing {file['filename']}")
 
-            print(f"File: {file['filename']}")
-            print(f"Additions: {file['additions']}")
-            print(f"Deletions: {file['deletions']}")
-
-            print("\nPatch:\n")
-            print(file["patch"])
-
-            print("\nAI Review:\n")
-
-            review_comments = self.generate_mock_review(
+            ai_review = self.bedrock_client.review_code(
                 file["patch"]
             )
 
-            for comment in review_comments:
-                print(f"- {comment}")
+            formatted_review = f"""
+### File: {file['filename']}
 
-            print("\n" + "=" * 60 + "\n")
+{ai_review}
+"""
+
+            all_reviews.append(formatted_review)
+
+        return "\n\n".join(all_reviews)
