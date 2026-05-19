@@ -49,3 +49,7 @@ class GitHubPRClient:
             })
 
         return changed_files
+
+    def post_review_comment(self, comment):
+
+        self.pr.create_issue_comment(comment)

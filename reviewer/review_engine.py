@@ -1,11 +1,11 @@
-from reviewer.bedrock_client import BedrockClient
+from reviewer.ollama_client import OllamaClient
 
 
 class ReviewEngine:
 
     def __init__(self):
 
-        self.bedrock_client = BedrockClient()
+        self.ollama_client = OllamaClient()
 
     def review_files(self, files):
 
@@ -15,7 +15,7 @@ class ReviewEngine:
 
             print(f"\nReviewing {file['filename']}")
 
-            ai_review = self.bedrock_client.review_code(
+            ai_review = self.ollama_client.review_code(
                 file["patch"]
             )
 
