@@ -1,47 +1,65 @@
-import json
 import os
 
-from github import Github
+from reviewer.github_client import GitHubPRClient
+from reviewer.review_engine import ReviewEngine
 
-# Read GitHub token
-github_token = os.getenv("GITHUB_TOKEN")
 
-# Initialize GitHub client
-g = Github(github_token)
+def main():
 
-# Repository name
-repo_name = os.getenv("GITHUB_REPOSITORY")
+    github_mode = os.getenv("GITHUB_EVENT_PATH")
 
-# Event payload path
-event_path = os.getenv("GITHUB_EVENT_PATH")
+    if github_mode:
 
-# Load GitHub event data
-with open(event_path, "r") as file:
-    event_data = json.load(file)
+        github_client = GitHubPRClient()
 
-# Extract PR number
-pr_number = event_data["pull_request"]["number"]
+        pr_details = github_client.get_pr_details()
 
-# Access repository
-repo = g.get_repo(repo_name)
+        print("\n==============================")
+        print(f"Reviewing PR #{pr_details['number']}")
+        print(f"PR Title: {pr_details['title']}")
+        print("==============================")
 
-# Access pull request
-pr = repo.get_pull(pr_number)
+        changed_files = github_client.get_changed_files()
 
-print("\n==============================")
-print(f"Reviewing PR #{pr_number}")
-print(f"PR Title: {pr.title}")
-print("==============================\n")
+    else:
 
-# Get changed files
-files = pr.get_files()
+        print("Running in LOCAL TEST MODE")
 
-for file in files:
-    print(f"File: {file.filename}")
-    print(f"Additions: {file.additions}")
-    print(f"Deletions: {file.deletions}")
+        github_client = None
 
-    print("\nPatch:")
-    print(file.patch)
+        changed_files = [
+            {
+                "filename": "sample.py",
+                "additions": 5,
+                "deletions": 1,
+                "patch": """
++ def login(password):
++     print(password)
+"""
+            }
+        ]
 
-    print("\n" + "=" * 60 + "\n")
+    review_engine = ReviewEngine()
+
+    review_summary = review_engine.review_files(
+        changed_files
+    )
+
+    print("\nGenerated Review:\n")
+    print(review_summary)
+
+    if github_client:
+
+        github_client.post_review_comment(
+            f"""
+## 🤖 AI Code Review Bot
+
+{review_summary}
+"""
+        )
+
+        print("\nReview comment posted successfully.")
+
+
+if __name__ == "__main__":
+    main()
