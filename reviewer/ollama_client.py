@@ -38,11 +38,25 @@ Code Diff:
             "stream": False
         }
 
-        response = requests.post(
-            self.base_url,
-            json=payload
-        )
+        try:
 
-        response_json = response.json()
+            response = requests.post(
+                self.base_url,
+                json=payload
+            )
 
-        return response_json["response"]
+            response.raise_for_status()
+
+            response_json = response.json()
+
+            print("\nDEBUG RESPONSE:")
+            print(response_json)
+
+            return response_json.get(
+                "response",
+                "No AI response generated."
+            )
+
+        except Exception as e:
+
+            return f"Error generating AI review: {str(e)}"
